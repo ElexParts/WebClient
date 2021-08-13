@@ -65,6 +65,70 @@ Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ
 
 uint32_t ip;
 
+/**************************************************************************/
+/*!
+    @brief  Begins an SSID scan and prints out all the visible networks
+*/
+/**************************************************************************/
+
+void listSSIDResults(void)
+{
+  uint32_t index;
+  uint8_t valid, rssi, sec;
+  char ssidname[33]; 
+
+  if (!cc3000.startSSIDscan(&index)) {
+    Serial.println(F("SSID scan failed!"));
+    return;
+  }
+
+  Serial.print(F("Networks found: ")); Serial.println(index);
+  Serial.println(F("================================================"));
+
+  while (index) {
+    index--;
+
+    valid = cc3000.getNextSSID(&rssi, &sec, ssidname);
+    
+    Serial.print(F("SSID Name    : ")); Serial.print(ssidname);
+    Serial.println();
+    Serial.print(F("RSSI         : "));
+    Serial.println(rssi);
+    Serial.print(F("Security Mode: "));
+    Serial.println(sec);
+    Serial.println();
+  }
+  Serial.println(F("================================================"));
+
+  cc3000.stopSSIDscan();
+}
+
+/**************************************************************************/
+/*!
+    @brief  Tries to read the IP address and other connection details
+*/
+/**************************************************************************/
+bool displayConnectionDetails(void)
+{
+  uint32_t ipAddress, netmask, gateway, dhcpserv, dnsserv;
+  
+  if(!cc3000.getIPAddress(&ipAddress, &netmask, &gateway, &dhcpserv, &dnsserv))
+  {
+    Serial.println(F("Unable to retrieve the IP Address!\r\n"));
+    return false;
+  }
+  else
+  {
+    Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
+    Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
+    Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
+    Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
+    Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
+    Serial.println();
+    return true;
+  }
+}
+
 void setup(void)
 {
   Serial.begin(115200);
@@ -162,68 +226,4 @@ void setup(void)
 void loop(void)
 {
  delay(1000);
-}
-
-/**************************************************************************/
-/*!
-    @brief  Begins an SSID scan and prints out all the visible networks
-*/
-/**************************************************************************/
-
-void listSSIDResults(void)
-{
-  uint32_t index;
-  uint8_t valid, rssi, sec;
-  char ssidname[33]; 
-
-  if (!cc3000.startSSIDscan(&index)) {
-    Serial.println(F("SSID scan failed!"));
-    return;
-  }
-
-  Serial.print(F("Networks found: ")); Serial.println(index);
-  Serial.println(F("================================================"));
-
-  while (index) {
-    index--;
-
-    valid = cc3000.getNextSSID(&rssi, &sec, ssidname);
-    
-    Serial.print(F("SSID Name    : ")); Serial.print(ssidname);
-    Serial.println();
-    Serial.print(F("RSSI         : "));
-    Serial.println(rssi);
-    Serial.print(F("Security Mode: "));
-    Serial.println(sec);
-    Serial.println();
-  }
-  Serial.println(F("================================================"));
-
-  cc3000.stopSSIDscan();
-}
-
-/**************************************************************************/
-/*!
-    @brief  Tries to read the IP address and other connection details
-*/
-/**************************************************************************/
-bool displayConnectionDetails(void)
-{
-  uint32_t ipAddress, netmask, gateway, dhcpserv, dnsserv;
-  
-  if(!cc3000.getIPAddress(&ipAddress, &netmask, &gateway, &dhcpserv, &dnsserv))
-  {
-    Serial.println(F("Unable to retrieve the IP Address!\r\n"));
-    return false;
-  }
-  else
-  {
-    Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
-    Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
-    Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
-    Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
-    Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
-    Serial.println();
-    return true;
-  }
 }
