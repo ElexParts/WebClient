@@ -32,6 +32,7 @@ It might not work on all networks!
 #include <string.h>
 #include "utility/debug.h"
 #include "cc3000_PubSubClient.h"
+#include "config.h"
 
 // These are the interrupt and control pins
 #define ADAFRUIT_CC3000_IRQ   3  // MUST be an interrupt pin!
@@ -45,9 +46,6 @@ It might not work on all networks!
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
                                          SPI_CLOCK_DIVIDER); // you can change this clock speed
 
-#define WLAN_SSID   "myNetwork"      // Cannot be longer than 32 characters!
-#define WLAN_PASS   "myPassword"
-
 // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
 #define WLAN_SECURITY   WLAN_SEC_WPA2
 
@@ -58,15 +56,6 @@ Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ
 // Configure a CC3000 Web Client.
 Adafruit_CC3000_Client client;
 
-// Configure an MQTT server.
-union ArrayToIp {
-  byte array[4];
-  uint32_t ip;
-};
-
-// Set MQTT server's ip address.
-ArrayToIp server = { 0, 0, 0, 0 };
-
 // MQTT Client callback.
 void callback (char* topic, byte* payload, unsigned int length) {
   // I have not tested this at all
@@ -75,15 +64,6 @@ void callback (char* topic, byte* payload, unsigned int length) {
 }
 
 cc3000_PubSubClient mqttclient(server.ip, 1883, callback, client, cc3000);
-
-/**************************************************************************/
-/*!
-    @brief  Sets up the HW and the CC3000 module (called automatically
-            on startup)
-*/
-/**************************************************************************/
-
-uint32_t ip;
 
 /**************************************************************************/
 /*!
@@ -238,6 +218,7 @@ void setup(void) {
     Serial.println(F("Failed!"));
     while(1);
   }
+  Serial.println(F("Deleted!"));
   
   // Optional SSID scan
   // listSSIDResults();
@@ -269,9 +250,9 @@ void setup(void) {
 
   // Publish successful connection status to MQTT server.
   if(client.connected()) {
-    Serial.println(F("Connected to MQTT."));
-    if (mqttclient.connect("ArduinoUnoClient-CC3000-A4")) {
-      mqttclient.publish("sensors/a4/out/debug","A4 is now online");
+    Serial.println(F("Connected to MQTT server"));
+    if (mqttclient.connect(device_name)) {
+      mqttclient.publish(topic_state, "Energy Monitoring Device is online");
     }
   }
 }
@@ -282,13 +263,13 @@ void loop(void) {
     client = cc3000.connectTCP(server.ip, 1883);
   
     if(client.connected()) {
-      if (mqttclient.connect("ArduinoUnoClient-Office-A4")) {
-        mqttclient.publish("sensors/a4/out/debug","A4 is now back online");
+      if (mqttclient.connect(device_name)) {
+        mqttclient.publish(topic_state, "Energy Monitoring Device is online");
       }
     }
   } else {
     // Publish to MQTT server.
-    mqttclient.publish("sensors/a4/out", "28");
+    mqttclient.publish(topic_telemetry, "{\"name\":\"EMON\",\"voltage\":\"220.00\",\"current\":\"3.00\",\"power\":\"660.00\"}");
   }
 
   delay(5000);
